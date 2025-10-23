@@ -22,11 +22,8 @@ window.addEventListener('message', function (event) {
         // !!! 關鍵步驟：更新全域變數 !!!
         finalScore = data.score; 
         maxScore = data.maxScore;
-        // 由於 draw() 會持續運行，這裡不再需要手動更新 scoreText 字串，直接在 draw() 中渲染即可
         
         console.log("新的分數已接收:", `最終成績分數: ${finalScore}/${maxScore}`); 
-        
-        // 【移除 noLoop/redraw 邏輯】：因為我們要跑動畫，所以 draw() 必須持續運行。
     }
 }, false);
 
@@ -155,14 +152,17 @@ function setup() {
 } 
 
 function draw() { 
-    // 計算百分比
+    // 計算百分比 (雖然不再是主要判斷條件，但仍用於顯示)
     let percentage = (maxScore > 0) ? (finalScore / maxScore) * 100 : 0;
+    
+    // 【新判斷條件】：答對題數 (finalScore) >= 2 
+    let triggerFirework = finalScore >= 2;
     
     // -----------------------------------------------------------------
     // A. 處理背景與煙火邏輯
     // -----------------------------------------------------------------
     
-    if (percentage >= 90) {
+    if (triggerFirework) {
         // 【高分/煙火模式】：使用半透明黑色背景 (alpha: 50)，創造煙火拖尾效果
         background(0, 0, 0, 50); 
         
@@ -199,18 +199,18 @@ function draw() {
         fill(255); // 白色文字
         text(scoreText, width / 2, height / 2);
         
-    } else if (percentage >= 90) {
-        // 優異成績
+    } else if (triggerFirework) {
+        // 優異成績 (finalScore >= 2)
         fill(0, 255, 100); // 亮綠色
         text("恭喜！優異成績！", width / 2, height / 2 - 50);
         
-    } else if (percentage >= 60) {
-        // 成績良好
+    } else if (percentage > 0) {
+        // 分數不為 0 但未達 2 分
         fill(255, 200, 50); // 橘黃色 
         text("成績良好，請再接再厲。", width / 2, height / 2 - 50);
         
     } else {
-        // 需要加強
+        // 分數為 0
         fill(255, 50, 50); // 亮紅色 
         text("需要加強努力！", width / 2, height / 2 - 50);
     }
@@ -222,18 +222,18 @@ function draw() {
     
     
     // -----------------------------------------------------------------
-    // C. 根據分數觸發不同的幾何圖形反映 (只在非煙火模式下顯示，避免衝突)
+    // C. 根據分數觸發不同的幾何圖形反映 (只在非煙火模式下顯示)
     // -----------------------------------------------------------------
     
-    if (percentage > 0 && percentage < 90) {
+    if (!triggerFirework && maxScore > 0) {
         
-        if (percentage >= 60) {
-            // 畫一個方形 
+        if (finalScore >= 1) { // 答對 1 題
+            // 畫一個方形
             fill(255, 181, 35, 150);
             rectMode(CENTER);
             rect(width / 2, height / 2 + 150, 150, 150);
             
-        } else if (percentage > 0) {
+        } else if (finalScore === 0) { // 答對 0 題
             // 畫一個三角形
             fill(200, 0, 0, 150);
             triangle(
