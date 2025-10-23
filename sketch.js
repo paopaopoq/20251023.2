@@ -12,7 +12,7 @@ let fireworks = [];
 
 
 window.addEventListener('message', function (event) {
-    // 執行來源驗證...
+    // 執行來源驗證... (請根據您的實際環境調整)
     // ...
     const data = event.data;
     
@@ -29,19 +29,21 @@ window.addEventListener('message', function (event) {
 
 
 // =================================================================
-// 【新增煙火系統】 - 粒子 Particle
+// 【煙火系統】 - 粒子 Particle Class
 // -----------------------------------------------------------------
 class Particle {
     constructor(x, y, hue, isRocket, lifespan = 255) {
         this.pos = createVector(x, y);
-        this.isRocket = isRocket; // 是否為發射中的火箭 (true) 或爆炸中的碎片 (false)
+        this.isRocket = isRocket; 
         this.lifespan = lifespan;
         this.hue = hue;
-        this.acc = createVector(0, 0); // 加速度
+        this.acc = createVector(0, 0); 
 
         if (this.isRocket) {
+            // 火箭向上發射
             this.vel = createVector(0, random(-15, -8));
         } else {
+            // 爆炸碎片向隨機方向發散
             this.vel = p5.Vector.random2D();
             this.vel.mult(random(2, 10));
         }
@@ -62,14 +64,16 @@ class Particle {
     }
 
     show() {
+        // 使用 HSB 顏色模式，方便控制煙火顏色
         colorMode(HSB, 255); 
         
         if (this.isRocket) {
+            // 火箭的軌跡
             strokeWeight(4);
             stroke(this.hue, 255, 255);
         } else {
+            // 爆炸碎片，透明度隨著生命值減少
             strokeWeight(2);
-            // 碎片的透明度(Alpha)取決於 lifespan
             stroke(this.hue, 255, 255, this.lifespan); 
         }
 
@@ -85,12 +89,12 @@ class Particle {
 
 
 // =================================================================
-// 【新增煙火系統】 - 煙火 Firework (包含爆炸邏輯)
+// 【煙火系統】 - 煙火 Firework Class
 // -----------------------------------------------------------------
 class Firework {
     constructor() {
         this.hue = random(255); 
-        // 在畫布底部隨機位置產生火箭 (Particle)
+        // 在畫布底部隨機位置產生火箭
         this.firework = new Particle(random(width), height, this.hue, true);
         this.exploded = false;
         this.particles = []; 
@@ -148,14 +152,14 @@ class Firework {
 
 function setup() { 
     createCanvas(windowWidth / 2, windowHeight / 2); 
-    // 【關鍵修改】：移除 noLoop()，讓 draw() 持續執行以實現動畫
+    // 必須讓 draw() 持續執行，所以沒有 noLoop()
 } 
 
 function draw() { 
-    // 計算百分比 (雖然不再是主要判斷條件，但仍用於顯示)
+    // 計算百分比
     let percentage = (maxScore > 0) ? (finalScore / maxScore) * 100 : 0;
     
-    // 【新判斷條件】：答對題數 (finalScore) >= 2 
+    // 【煙火觸發條件】：答對題數 (finalScore) >= 2 
     let triggerFirework = finalScore >= 2;
     
     // -----------------------------------------------------------------
@@ -163,7 +167,7 @@ function draw() {
     // -----------------------------------------------------------------
     
     if (triggerFirework) {
-        // 【高分/煙火模式】：使用半透明黑色背景 (alpha: 50)，創造煙火拖尾效果
+        // 【煙火模式】：使用半透明黑色背景 (alpha: 50)，創造煙火拖尾效果
         background(0, 0, 0, 50); 
         
         // 【煙火發射邏輯】：約 10% 的機率在每幀中發射一個新的煙火
@@ -181,7 +185,7 @@ function draw() {
         }
         
     } else {
-        // 【一般/初始模式】：使用完全不透明的黑色背景，確保文字和圖案清晰
+        // 【一般模式】：使用完全不透明的黑色背景
         background(0);
         // 如果分數不達標，則清除所有煙火
         fireworks = [];
