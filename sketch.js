@@ -2,7 +2,8 @@
 // 步驟一：分數數據與煙火系統的全域變數
 // -----------------------------------------------------------------
 
-// 確保這是全域變數
+// 全域變數，用於儲存 p5.js 的 Canvas 元素
+let myCanvas; 
 let finalScore = 0; 
 let maxScore = 0;
 let scoreText = "等待 H5P 成績回傳..."; // 初始提示文字
@@ -24,6 +25,11 @@ window.addEventListener('message', function (event) {
         maxScore = data.maxScore;
         
         console.log("新的分數已接收:", `最終成績分數: ${finalScore}/${maxScore}`); 
+        
+        // !!! 關鍵：收到成績後，顯示 Canvas 畫面 !!!
+        if (myCanvas) {
+            myCanvas.style('display', 'block');
+        }
     }
 }, false);
 
@@ -40,10 +46,8 @@ class Particle {
         this.acc = createVector(0, 0); 
 
         if (this.isRocket) {
-            // 火箭向上發射
             this.vel = createVector(0, random(-15, -8));
         } else {
-            // 爆炸碎片向隨機方向發散
             this.vel = p5.Vector.random2D();
             this.vel.mult(random(2, 10));
         }
@@ -64,15 +68,12 @@ class Particle {
     }
 
     show() {
-        // 使用 HSB 顏色模式，方便控制煙火顏色
         colorMode(HSB, 255); 
         
         if (this.isRocket) {
-            // 火箭的軌跡
             strokeWeight(4);
             stroke(this.hue, 255, 255);
         } else {
-            // 爆炸碎片，透明度隨著生命值減少
             strokeWeight(2);
             stroke(this.hue, 255, 255, this.lifespan); 
         }
@@ -94,7 +95,6 @@ class Particle {
 class Firework {
     constructor() {
         this.hue = random(255); 
-        // 在畫布底部隨機位置產生火箭
         this.firework = new Particle(random(width), height, this.hue, true);
         this.exploded = false;
         this.particles = []; 
@@ -105,7 +105,6 @@ class Firework {
             this.firework.applyForce(createVector(0, 0.2)); // 重力
             this.firework.update();
 
-            // 如果火箭速度開始向下 (代表達到最高點)，則爆炸
             if (this.firework.vel.y >= 0) { 
                 this.exploded = true;
                 this.explode();
@@ -122,7 +121,6 @@ class Firework {
     }
 
     explode() {
-        // 爆炸產生 100 個碎片
         for (let i = 0; i < 100; i++) {
             let p = new Particle(this.firework.pos.x, this.firework.pos.y, this.hue, false);
             this.particles.push(p);
@@ -140,7 +138,6 @@ class Firework {
     }
 
     isDone() {
-        // 如果火箭已爆炸且所有碎片都消失，則此煙火結束
         return this.exploded && this.particles.length === 0;
     }
 }
@@ -151,8 +148,16 @@ class Firework {
 // -----------------------------------------------------------------
 
 function setup() { 
-    createCanvas(windowWidth / 2, windowHeight / 2); 
-    // 必須讓 draw() 持續執行，所以沒有 noLoop()
+    // 1. 創建 Canvas，並用全域變數 myCanvas 儲存它
+    // 使用 windowWidth/Height 確保它覆蓋整個視窗/父容器
+    myCanvas = createCanvas(windowWidth, windowHeight); 
+    
+    // 2. 設定 Canvas 的位置和層級，實現覆蓋效果
+    myCanvas.position(0, 0, 'fixed'); 
+    myCanvas.style('z-index', '100'); // 確保在 H5P 內容之上
+    
+    // 3. 初始隱藏 Canvas
+    myCanvas.style('display', 'none'); 
 } 
 
 function draw() { 
@@ -170,7 +175,7 @@ function draw() {
         // 【煙火模式】：使用半透明黑色背景 (alpha: 50)，創造煙火拖尾效果
         background(0, 0, 0, 50); 
         
-        // 【煙火發射邏輯】：約 10% 的機率在每幀中發射一個新的煙火
+        // 【煙火發射邏輯】
         if (random(1) < 0.1) { 
             fireworks.push(new Firework());
         }
@@ -198,31 +203,31 @@ function draw() {
     textSize(80); 
     textAlign(CENTER);
     
+    // 文字位置應該相對於 Canvas 的中心 (width/2, height/2)
+    const textCenterX = width / 2;
+    const textCenterY = height / 2;
+
     if (maxScore === 0) {
-        // 尚未收到分數 (初始狀態)
-        fill(255); // 白色文字
-        text(scoreText, width / 2, height / 2);
+        fill(255);
+        text(scoreText, textCenterX, textCenterY);
         
     } else if (triggerFirework) {
-        // 優異成績 (finalScore >= 2)
-        fill(0, 255, 100); // 亮綠色
-        text("恭喜！優異成績！", width / 2, height / 2 - 50);
+        fill(0, 255, 100); 
+        text("恭喜！優異成績！", textCenterX, textCenterY - 50);
         
     } else if (percentage > 0) {
-        // 分數不為 0 但未達 2 分
-        fill(255, 200, 50); // 橘黃色 
-        text("成績良好，請再接再厲。", width / 2, height / 2 - 50);
+        fill(255, 200, 50); 
+        text("成績良好，請再接再厲。", textCenterX, textCenterY - 50);
         
     } else {
-        // 分數為 0
-        fill(255, 50, 50); // 亮紅色 
-        text("需要加強努力！", width / 2, height / 2 - 50);
+        fill(255, 50, 50); 
+        text("需要加強努力！", textCenterX, textCenterY - 50);
     }
 
     // 顯示具體分數
     textSize(50);
-    fill(255); // 白色文本
-    text(`得分: ${finalScore}/${maxScore}`, width / 2, height / 2 + 50);
+    fill(255); 
+    text(`得分: ${finalScore}/${maxScore}`, textCenterX, textCenterY + 50);
     
     
     // -----------------------------------------------------------------
@@ -235,15 +240,15 @@ function draw() {
             // 畫一個方形
             fill(255, 181, 35, 150);
             rectMode(CENTER);
-            rect(width / 2, height / 2 + 150, 150, 150);
+            rect(textCenterX, textCenterY + 150, 150, 150);
             
         } else if (finalScore === 0) { // 答對 0 題
             // 畫一個三角形
             fill(200, 0, 0, 150);
             triangle(
-                width / 2, height / 2 + 80,
-                width / 2 - 75, height / 2 + 230,
-                width / 2 + 75, height / 2 + 230
+                textCenterX, textCenterY + 80,
+                textCenterX - 75, textCenterY + 230,
+                textCenterX + 75, textCenterY + 230
             );
         }
     }
